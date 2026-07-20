@@ -1,82 +1,152 @@
-# BTL-3 Compact runtime
+<div align="center">
 
-Native execution and product integrations for the exact 8.39 GB BTL-3 Compact
-artifact.
+# BTL-3
 
-- OpenAI-compatible streaming server
-- Apple Metal and NVIDIA CUDA packed kernels
-- LM Studio native-generator integration
-- Ollama CLI bridge and explicitly labeled patched-Ollama packaging
-- deterministic installers, manifests, checksums, and conformance tests
+### Native runtime and integrations for Bad Theory Labs' agentic coding model
 
-## Models
+**27B · 262K architecture · 8.39 GB Compact edition · OpenAI-compatible**
 
-- [BTL-3](https://huggingface.co/badtheorylabs/BTL-3): full-quality RL-0013
-  adapter for Qwen3.6-27B.
-- [BTL-3 Compact](https://huggingface.co/badtheorylabs/BTL-3-Compact): exact
-  8.39 GB native GGUF and packaged integrations.
+[Full model](https://huggingface.co/badtheorylabs/BTL-3) ·
+[Compact model](https://huggingface.co/badtheorylabs/BTL-3-Compact) ·
+[Bad Theory Labs](https://www.badtheorylabs.com/) ·
+[Discord](https://discord.gg/QJBCcB7bF)
 
-## Backend boundary
+</div>
 
-Integrations use the native packed llama.cpp implementation. Patched Ollama
-spawns that runner directly. The LM Studio generator starts the same installed
-runner automatically and then speaks its loopback OpenAI-compatible API.
-The Python/CUDA reference is a research oracle, not a release backend.
+## What is BTL-3?
 
-## Verified status
+BTL-3 is a 27B coding and tool-use model built for repository agents,
+structured function calling, verification, and recovery. This repository
+contains the native execution stack for **BTL-3 Compact**, plus its LM Studio,
+Ollama CLI, and OpenAI-compatible integrations.
 
-The exact release GGUF is `8,392,369,600` bytes with SHA-256
-`2ddf9527620a17a2a6739d184a7096c45712092e6589128792ec6254e94dc30c`.
-All 2,416 tensor payloads were byte-verified during export.
+BTL-3 Compact stores the complete text model in one
+**8,392,369,600-byte GGUF** and executes its packed representation directly.
+It never reconstructs or requires the original BF16 checkpoint.
 
-The packaged macOS arm64 server passes native model load and generation.
-OpenAI and Ollama transport behavior—including streaming, reasoning, tool
-calls, and cancellation—is covered by protocol tests.
+## Highlights
 
-The Apple Metal backend accelerates every custom decode-critical path: AVQ2,
-affine INT4, vocabulary projection, and rescued and ordinary embedding rows.
-A full-model Apple M2 smoke measured 2.30 prompt tokens/second and 2.48
-generated tokens/second. See
-[the local launch guide](docs/launch-btl3-compact.md) for commands, supported
-surfaces and device context guidance.
+- Native packed CUDA and Apple Metal kernels.
+- OpenAI-compatible streaming, reasoning, tool calls, and cancellation.
+- Verified macOS arm64 runtime.
+- Reproducible Linux/Windows CUDA and DGX Spark packaging definitions.
+- LM Studio native-generator integration.
+- Ollama CLI bridge and explicitly labeled patched-runner packaging.
+- Deterministic installers, manifests, checksums, and conformance tests.
 
-The exact GGUF also passes full native CUDA execution on an RTX PRO 6000
-Blackwell Server Edition. Three native repetitions measured 84.70 prompt
-tokens/second and 43.16 generated tokens/second. That validates the Linux
-x86_64 Blackwell implementation, not every consumer package or GPU.
+## Model results
 
-Reproducible CUDA 13.0.2 definitions target RTX 4090 (`sm_89`), RTX 5090
-(`sm_120a`), Windows x64, and DGX Spark (`arm64`/`sm_121a`). Those exact
-device/distribution combinations remain preview-only until their own
-full-model conformance gates pass. See
-[the CUDA launch guide](docs/launch-btl3-cuda.md).
+| Evaluation | BTL-3 result |
+|---|---:|
+| BFCL v4 AST | **88.5% (1097/1240)** |
+| HumanEval | **95.12% (156/164)** |
+| LiveCodeBench v6 | **88.1% (170/193)** |
+| BigCodeBench-Hard Instruct | **26.35% (39/148)** |
 
-The [consumer integration guide](docs/patched-ollama-and-lmstudio.md) documents
-BTL-3 Patched Ollama and the official LM Studio generator. Stock Ollama and
-the stock LM Studio GGUF engine do not execute AVQ2.
+The Compact artifact retained **92.2% (83/90)** of teacher-correct behavior
+overall on a fresh 100-turn tool-contract gate.
 
-## Build the clean launch directory
+## Native performance
 
-The builder verifies the complete model and every runtime hash, excludes
-development dependencies, separates supported and preview runtimes, and emits
-`RELEASE_MANIFEST.json` plus `SHA256SUMS`:
+| Device | Prompt processing | Generation | Status |
+|---|---:|---:|---|
+| RTX PRO 6000 Blackwell 96 GB | **84.70 tok/s** | **43.16 tok/s** | Exact GGUF, full CUDA offload |
+| Apple M2 16 GB | **2.30 tok/s** | **2.48 tok/s** | Exact GGUF, Metal smoke |
+
+## Quickstart
+
+Download the packaged model and runtime:
 
 ```bash
-.venv/bin/python tools/build_launch_release.py --help
+hf download badtheorylabs/BTL-3-Compact \
+  --local-dir BTL-3-Compact
+cd BTL-3-Compact
 ```
 
-## Compact GGUF exporter
-
-The custom exporter preserves BTL-3 Compact's AVQ2, affine-INT4, vocabulary
-rescue, and behavior-LoRA tensors without reconstructing dense weights:
+Install the verified macOS package:
 
 ```bash
-.venv/bin/python tools/export_btl3_compact_gguf.py \
-  --source /path/to/BTL-3/compact \
-  --dry-run \
-  --report artifacts/btl3-compact-gguf-dry-run.json
+python3 tools/install_consumer_bundle.py \
+  --runtime runtimes/supported/BTL-3-Compact-macos-arm64 \
+  --model model/BTL-3-Compact-AVQ2.gguf
 ```
 
-Use `--conformance-layer N --output PATH` to write and byte-verify one layer
-before a full export. A conformance-layer file is intentionally incomplete and
-cannot be served as a standalone model.
+Or start it directly:
+
+```bash
+BTL3_MODEL="$PWD/model/BTL-3-Compact-AVQ2.gguf" \
+BTL3_CTX_SIZE=4096 \
+  runtimes/supported/BTL-3-Compact-macos-arm64/bin/btl3-server
+```
+
+Call the OpenAI-compatible endpoint:
+
+```bash
+curl http://127.0.0.1:8080/v1/chat/completions \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "model": "BTL-3",
+    "messages": [{"role": "user", "content": "Fix the failing tests."}],
+    "stream": true
+  }'
+```
+
+## Integration boundary
+
+The integrations use BTL-3's packed llama.cpp implementation:
+
+- **LM Studio** starts or connects to the installed native runner through the
+  included generator.
+- **Ollama CLI** connects through the included compatibility bridge.
+- **OpenAI SDKs** connect directly to the local server.
+
+Stock Ollama and the stock LM Studio GGUF engine do not decode AVQ2 directly.
+Preview packages are kept separate from verified runtime bundles.
+
+## Repository layout
+
+| Path | Purpose |
+|---|---|
+| `native/llama.cpp` | Packed native runtime and kernels |
+| `integrations/lmstudio` | LM Studio generator |
+| `integrations/ollama` | Ollama CLI integration |
+| `launch` | Cross-platform launchers |
+| `packaging/cuda` | Reproducible NVIDIA bundle definitions |
+| `tools` | Export, install, validation, and packaging tools |
+| `tests` | Protocol and release conformance tests |
+| `docs` | Runtime, CUDA, and integration guides |
+
+## Development
+
+Run the maintained integration tests:
+
+```bash
+python3 -m venv .venv
+.venv/bin/pip install pytest
+.venv/bin/pytest -q
+```
+
+Validate the LM Studio package:
+
+```bash
+cd integrations/lmstudio/btl3-native
+npm ci
+npm run typecheck
+```
+
+## Artifact identity
+
+| Item | Value |
+|---|---|
+| Model | BTL-3 Compact RL-0013 |
+| Bytes | `8,392,369,600` |
+| SHA-256 | `2ddf9527620a17a2a6739d184a7096c45712092e6589128792ec6254e94dc30c` |
+| Verified tensor payloads | `2,416` |
+
+## License
+
+BTL-3 model artifacts are Apache-2.0. The native runtime is MIT-licensed.
+See [`LICENSE`](LICENSE) and [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md).
+
+Run generated code and tool calls in a sandbox, and require explicit
+confirmation before destructive or high-impact actions.
