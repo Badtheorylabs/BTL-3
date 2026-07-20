@@ -1,0 +1,30 @@
+#!/bin/sh
+set -eu
+
+bundle_root=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
+model_name="BTL-3-Compact-AVQ2.gguf"
+model=${BTL3_MODEL:-"$bundle_root/model/$model_name"}
+if [ ! -f "$model" ] && [ -f "$bundle_root/../../artifacts/release/$model_name" ]; then
+    model="$bundle_root/../../artifacts/release/$model_name"
+fi
+if [ ! -f "$model" ]; then
+    echo "BTL-3 model not found. Set BTL3_MODEL to $model_name." >&2
+    exit 2
+fi
+
+set -- \
+    "$bundle_root/share/btl3/ollama_bridge.py" \
+    --upstream "http://${BTL3_HOST:-127.0.0.1}:${BTL3_PORT:-8080}" \
+    --host "${BTL3_OLLAMA_HOST:-127.0.0.1}" \
+    --port "${BTL3_OLLAMA_PORT:-11435}" \
+    --model "${BTL3_OLLAMA_MODEL:-btl3-compact:latest}" \
+    --openai-model BTL-3 \
+    --gguf "$model" \
+    --gguf-sha256 2ddf9527620a17a2a6739d184a7096c45712092e6589128792ec6254e94dc30c \
+    --ctx-size "${BTL3_CTX_SIZE:-32768}" \
+    "$@"
+
+if [ -n "${BTL3_API_KEY:-}" ]; then
+    set -- "$@" --api-key "$BTL3_API_KEY"
+fi
+exec "${PYTHON:-python3}" "$@"

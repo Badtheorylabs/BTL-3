@@ -1,0 +1,45 @@
+{
+  "schema_version": 1,
+  "model": "BTL-3 Compact",
+  "mode": "full",
+  "source_manifest_sha256": "a2b763323eed76d8f78fe5cbdf5a2349323b2c3d87dddc037714569946961116",
+  "source_weight_bytes": 8551772952,
+  "tensor_count": 2416,
+  "projected_tensor_bytes": 8381262032,
+  "components": {
+    "small-state": {
+      "tensors": 449,
+      "bytes": 57767936
+    },
+    "avq2": {
+      "tensors": 1615,
+      "bytes": 5498130320
+    },
+    "affine-int4": {
+      "tensors": 189,
+      "bytes": 875438080
+    },
+    "bf16-island": {
+      "tensors": 12,
+      "bytes": 1205862400
+    },
+    "affine-int4-demotion": {
+      "tensors": 6,
+      "bytes": 43909120
+    },
+    "behavior-lora": {
+      "tensors": 132,
+      "bytes": 32440320
+    },
+    "vocabulary": {
+      "tensors": 13,
+      "bytes": 667713856
+    }
+  },
+  "exporter_unsupported": [],
+  "native_runtime_gaps": [],
+  "output_bytes": 8392369600,
+  "output_sha256": "2ddf9527620a17a2a6739d184a7096c45712092e6589128792ec6254e94dc30c",
+  "verified_tensor_count": 2416,
+  "verified_payload_count": 2416
+}

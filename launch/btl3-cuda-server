@@ -1,0 +1,98 @@
+#!/bin/sh
+set -eu
+
+bundle_root=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
+server="$bundle_root/libexec/llama-server"
+model_name="BTL-3-Compact-AVQ2.gguf"
+
+find_model() {
+    if [ -n "${BTL3_MODEL:-}" ]; then
+        printf '%s\n' "$BTL3_MODEL"
+        return
+    fi
+    for candidate in \
+        "$bundle_root/model/$model_name" \
+        "$bundle_root/../../artifacts/release/$model_name" \
+        "$PWD/$model_name"
+    do
+        if [ -f "$candidate" ]; then
+            printf '%s\n' "$candidate"
+            return
+        fi
+    done
+    return 1
+}
+
+detect_gpu_memory() {
+    if [ -n "${BTL3_GPU_MEMORY_MIB:-}" ]; then
+        printf '%s\n' "$BTL3_GPU_MEMORY_MIB"
+        return
+    fi
+    if command -v nvidia-smi >/dev/null 2>&1; then
+        value=$(nvidia-smi --query-gpu=memory.total \
+            --format=csv,noheader,nounits 2>/dev/null | head -1 | tr -dc '0-9')
+        if [ -n "$value" ]; then
+            printf '%s\n' "$value"
+            return
+        fi
+    fi
+    case "$(uname -m)" in
+        aarch64|arm64)
+            awk '/MemTotal:/ { printf "%d\n", $2 / 1024 }' /proc/meminfo
+            return
+            ;;
+    esac
+    return 1
+}
+
+choose_context() {
+    memory=$1
+    if [ "$memory" -ge 96000 ]; then printf '%s\n' 131072
+    elif [ "$memory" -ge 48000 ]; then printf '%s\n' 98304
+    elif [ "$memory" -ge 28000 ]; then printf '%s\n' 65536
+    elif [ "$memory" -ge 20000 ]; then printf '%s\n' 32768
+    else printf '%s\n' 16384
+    fi
+}
+
+model=$(find_model || true)
+if [ -z "$model" ] || [ ! -f "$model" ]; then
+    echo "BTL-3 model not found. Set BTL3_MODEL to $model_name." >&2
+    exit 2
+fi
+if [ ! -x "$server" ]; then
+    echo "Packaged llama-server is missing or not executable: $server" >&2
+    exit 2
+fi
+memory_mib=$(detect_gpu_memory || true)
+if [ -z "$memory_mib" ]; then
+    echo "NVIDIA GPU memory could not be detected; set BTL3_GPU_MEMORY_MIB." >&2
+    exit 2
+fi
+
+host=${BTL3_HOST:-127.0.0.1}
+port=${BTL3_PORT:-8080}
+ctx=${BTL3_CTX_SIZE:-$(choose_context "$memory_mib")}
+parallel=${BTL3_PARALLEL:-1}
+aliases=${BTL3_MODEL_ALIASES:-BTL-3}
+gpu_layers=${BTL3_GPU_LAYERS:-99}
+export LD_LIBRARY_PATH="$bundle_root/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+export GGML_BACKEND_PATH="$bundle_root/lib/libggml-cuda.so"
+case "$(uname -m)" in
+    aarch64|arm64) export GGML_CUDA_ENABLE_UNIFIED_MEMORY=1 ;;
+esac
+
+set -- \
+    --model "$model" --alias "$aliases" --host "$host" --port "$port" \
+    --ctx-size "$ctx" --parallel "$parallel" --n-gpu-layers "$gpu_layers" \
+    --jinja --reasoning auto --reasoning-format deepseek --cont-batching \
+    --cache-ram 0 --no-warmup --no-ui "$@"
+if [ -n "${BTL3_API_KEY:-}" ]; then
+    set -- "$@" --api-key "$BTL3_API_KEY"
+fi
+if [ "${BTL3_PRINT_COMMAND:-0}" = "1" ]; then
+    printf 'executable=%s\nmodel=%s\nhost=%s\nport=%s\nctx_size=%s\ngpu_memory_mib=%s\n' \
+        "$server" "$model" "$host" "$port" "$ctx" "$memory_mib"
+    exit 0
+fi
+exec "$server" "$@"

@@ -1,0 +1,5 @@
+# Requires the explicitly labeled BTL-3 Patched Ollama distribution.
+FROM ./BTL-3-Compact-AVQ2.gguf
+PARAMETER num_ctx 32768
+PARAMETER temperature 0.6
+PARAMETER top_p 0.95

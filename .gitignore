@@ -1,0 +1,9 @@
+.DS_Store
+.pytest_cache/
+.venv/
+__pycache__/
+dist/
+node_modules/
+*.egg-info/
+artifacts/**/*.gguf
+artifacts/runtime/

@@ -1,0 +1,11 @@
+#!/bin/sh
+set -eu
+
+root=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+if ! command -v lms >/dev/null 2>&1; then
+    echo "LM Studio CLI not found. Install it with: npx lmstudio install-cli" >&2
+    exit 2
+fi
+cd "$root"
+npm ci --ignore-scripts
+exec lms dev

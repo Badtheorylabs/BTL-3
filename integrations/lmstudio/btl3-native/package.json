@@ -1,0 +1,17 @@
+{
+  "name": "btl3-native-lmstudio",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "build": "tsc --noEmit",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@lmstudio/sdk": "1.5.0",
+    "openai": "6.48.0"
+  },
+  "devDependencies": {
+    "@types/node": "24.0.0",
+    "typescript": "5.9.3"
+  }
+}

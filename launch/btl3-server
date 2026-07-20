@@ -1,0 +1,73 @@
+#!/bin/sh
+set -eu
+
+bundle_root=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
+server="$bundle_root/libexec/llama-server"
+model_name="BTL-3-Compact-AVQ2.gguf"
+
+find_model() {
+    if [ -n "${BTL3_MODEL:-}" ]; then
+        printf '%s\n' "$BTL3_MODEL"
+        return
+    fi
+    for candidate in \
+        "$bundle_root/model/$model_name" \
+        "$bundle_root/../../artifacts/release/$model_name" \
+        "$PWD/artifacts/release/$model_name"
+    do
+        if [ -f "$candidate" ]; then
+            printf '%s\n' "$candidate"
+            return
+        fi
+    done
+    return 1
+}
+
+model=$(find_model || true)
+if [ -z "$model" ] || [ ! -f "$model" ]; then
+    echo "BTL-3 model not found. Set BTL3_MODEL to $model_name." >&2
+    exit 2
+fi
+if [ ! -x "$server" ]; then
+    echo "Packaged llama-server is missing or not executable: $server" >&2
+    exit 2
+fi
+if [ "$(uname -m)" != "arm64" ]; then
+    echo "This bundle requires macOS arm64." >&2
+    exit 2
+fi
+
+host=${BTL3_HOST:-127.0.0.1}
+port=${BTL3_PORT:-8080}
+ctx=${BTL3_CTX_SIZE:-32768}
+parallel=${BTL3_PARALLEL:-1}
+gpu_layers=${BTL3_GPU_LAYERS:-99}
+aliases=${BTL3_MODEL_ALIASES:-BTL-3}
+
+set -- \
+    --model "$model" \
+    --alias "$aliases" \
+    --host "$host" \
+    --port "$port" \
+    --ctx-size "$ctx" \
+    --parallel "$parallel" \
+    --n-gpu-layers "$gpu_layers" \
+    --jinja \
+    --reasoning auto \
+    --reasoning-format deepseek \
+    --cont-batching \
+    --cache-ram 0 \
+    --no-mmap \
+    --no-warmup \
+    --no-ui \
+    "$@"
+
+if [ -n "${BTL3_API_KEY:-}" ]; then
+    set -- "$@" --api-key "$BTL3_API_KEY"
+fi
+if [ "${BTL3_PRINT_COMMAND:-0}" = "1" ]; then
+    printf 'executable=%s\nmodel=%s\nhost=%s\nport=%s\nctx_size=%s\n' \
+        "$server" "$model" "$host" "$port" "$ctx"
+    exit 0
+fi
+exec "$server" "$@"

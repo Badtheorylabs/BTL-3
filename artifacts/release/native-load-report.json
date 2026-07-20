@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "model": "BTL-3 Compact",
+  "artifact": "BTL-3-Compact-AVQ2.gguf",
+  "artifact_bytes": 8392369600,
+  "artifact_sha256": "2ddf9527620a17a2a6739d184a7096c45712092e6589128792ec6254e94dc30c",
+  "tensor_count": 2416,
+  "verified_payload_count": 2416,
+  "runner_commit": "9fcaed763",
+  "platform": "macOS arm64",
+  "device": "Apple M2",
+  "context_tokens": 128,
+  "cpu_only": false,
+  "backend": "Apple Metal",
+  "model_load": "pass",
+  "graph_reservation": "pass",
+  "generation": "pass",
+  "prompt_tokens": 15,
+  "prompt_tokens_per_second": 2.297,
+  "generated_tokens": 4,
+  "generated_tokens_per_second": 2.483,
+  "generation_note": "Single Apple M2 full-model smoke; not a universal throughput claim"
+}

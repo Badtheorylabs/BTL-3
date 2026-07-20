@@ -1,0 +1,17 @@
+# Catalog metadata only. The btl3-native generator owns execution.
+model: badtheorylabs/btl-3-compact
+base: badtheorylabs/btl-3-compact-avq2-native
+metadataOverrides:
+  domain: llm
+  architectures:
+    - qwen3.5
+  compatibilityTypes:
+    - btl3-avq2-native
+  paramsStrings:
+    - 27B
+  minMemoryUsageBytes: 10000000000
+  contextLengths:
+    - 262144
+  vision: false
+  reasoning: true
+  trainedForToolUse: true
