@@ -1,0 +1,57 @@
+{
+  "project": "BTL-3 compression research",
+  "sealed_at": "2026-07-19",
+  "status": "technical report and engineering article",
+  "primary_artifacts": {
+    "paper_source": "PAPER.tex",
+    "paper_pdf": {
+      "path": "output/pdf/btl-3-behavior-before-perplexity.pdf",
+      "pages": 5,
+      "bytes": 158836,
+      "sha256": "f87a5ae9dd3ccf09bab9df9b03af4551b9ed3b317d9d6ef7a95d051b5c4ac2a1"
+    },
+    "article_source": "ARTICLE.md",
+    "article_appendix": "ARTICLE-IMPLEMENTATION-APPENDIX.md",
+    "article_pdf": {
+      "path": "output/pdf/btl-3-compression-engineering-article.pdf",
+      "pages": 15,
+      "bytes": 384711,
+      "sha256": "73acd875e39c4b817488d5c5428d44bd78a29d995032e2da02da758a2f79ba9f"
+    }
+  },
+  "reported_model_artifact": {
+    "name": "BTL-3 Compact",
+    "format": "GGUF with custom packed AVQ2 backend",
+    "final_file_bytes": 8392369600,
+    "tensor_payload_bytes": 8381262032,
+    "tensor_count": 2416,
+    "sha256": "2ddf9527620a17a2a6739d184a7096c45712092e6589128792ec6254e94dc30c",
+    "frozen_provenance_package_bytes": 8572070080,
+    "contract_ceiling_bytes": 8600000000,
+    "headroom_bytes": 207630400
+  },
+  "reported_release_gate": {
+    "teacher_correct": 90,
+    "compact_correct_on_teacher_correct": 83,
+    "conditional_tool_behavior_retention": 0.922,
+    "scope": "fresh private 100-turn tool-behavior gate",
+    "known_weakness": "parallel-multiple tool calls"
+  },
+  "claim_boundary": {
+    "supported": [
+      "a novel end-to-end compression cookbook for behavior-sensitive agent models",
+      "failure-driven mixed vector quantization and precision allocation",
+      "an 8.39 GB native standalone BTL-3 Compact GGUF",
+      "packed CUDA and Metal execution through the custom backend",
+      "92.2% conditional tool-behavior retention on the stated private gate"
+    ],
+    "unsupported": [
+      "a novel universal quantization codebook",
+      "92.2% general intelligence retention",
+      "lossless compression",
+      "phone-ready deployment",
+      "coding-benchmark retention for the compact artifact"
+    ]
+  },
+  "integrity_file": "SHA256SUMS"
+}

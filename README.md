@@ -252,6 +252,26 @@ All 2,416 tensor payloads were byte-verified during export. The exact GGUF
 then completed native autoregressive generation on Apple Metal and NVIDIA
 CUDA without a persistent dense reconstruction.
 
+## Compression research
+
+The complete compression record is published with the repository:
+
+- [Behavior Before Perplexity](papers/behavior-before-perplexity/output/pdf/btl-3-behavior-before-perplexity.pdf), the five-page research paper;
+- [engineering article](papers/behavior-before-perplexity/output/pdf/btl-3-compression-engineering-article.pdf), the chronological build account;
+- [canonical LaTeX source](papers/behavior-before-perplexity/PAPER.tex);
+- [claim ledger](papers/behavior-before-perplexity/CLAIMS.md); and
+- [checksums and research manifest](papers/behavior-before-perplexity/RESEARCH_MANIFEST.json).
+
+The paper documents the executed recipe rather than only naming its method
+families: calibration splits, FP64 second moments, 128-wide Hadamard blocks,
+four-weight affine codes, block-LDLQ assignment, scale search, failed
+reconstruction stages, packed-prefix bisection, measured precision islands,
+behavior repair, vocabulary rescue, output-head correction, native export,
+and the sealed artifact gate.
+
+BTL claims novelty for the behavior-first cookbook and decision procedure,
+not for the public quantization, LDLQ, Hadamard, or LoRA primitives it uses.
+
 ## Runtime and integration support
 
 | Surface | Status | Notes |
@@ -389,6 +409,18 @@ See [`LICENSE`](LICENSE) and [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md).
   author = {Bad Theory Labs},
   year   = {2026},
   url    = {https://github.com/Badtheorylabs/BTL-3}
+}
+```
+
+```bibtex
+@techreport{btl3_compact_2026,
+  title       = {Behavior Before Perplexity: A Failure-Driven Recipe for
+                 Compressing a 27B Agentic Model to 8.39 GB},
+  author      = {{Bad Theory Labs}},
+  institution = {Bad Theory Labs},
+  year        = {2026},
+  month       = {July},
+  url         = {https://github.com/Badtheorylabs/BTL-3/tree/main/papers/behavior-before-perplexity}
 }
 ```
 
