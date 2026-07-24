@@ -158,6 +158,10 @@ def test_posix_launcher_prints_safe_detected_context(tmp_path: Path) -> None:
     )
     assert "ctx_size=32768" in result.stdout
     assert "gpu_memory_mib=24576" in result.stdout
+    assert "gpu_layers=99" in result.stdout
+    assert "max_tokens=2048" in result.stdout
+    assert "repeat_penalty=1.10" in result.stdout
+    assert "thinking_enabled=false" in result.stdout
 
 
 def test_launchers_point_dynamic_loader_at_packaged_cuda_backend() -> None:
@@ -165,3 +169,14 @@ def test_launchers_point_dynamic_loader_at_packaged_cuda_backend() -> None:
     windows = (ROOT / "launch/btl3-cuda-server.ps1").read_text()
     assert 'GGML_BACKEND_PATH="$bundle_root/lib/libggml-cuda.so"' in linux
     assert '"lib\\ggml-cuda.dll"' in windows
+
+
+def test_launchers_bound_generation_and_repetition() -> None:
+    linux = (ROOT / "launch/btl3-cuda-server").read_text()
+    windows = (ROOT / "launch/btl3-cuda-server.ps1").read_text()
+    for source in (linux, windows):
+        assert "--n-predict" in source
+        assert "--repeat-penalty" in source
+        assert "--repeat-last-n" in source
+        assert "--chat-template-kwargs" in source
+        assert "enable_thinking" in source

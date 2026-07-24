@@ -76,6 +76,13 @@ ctx=${BTL3_CTX_SIZE:-$(choose_context "$memory_mib")}
 parallel=${BTL3_PARALLEL:-1}
 aliases=${BTL3_MODEL_ALIASES:-BTL-3}
 gpu_layers=${BTL3_GPU_LAYERS:-99}
+max_tokens=${BTL3_MAX_TOKENS:-2048}
+repeat_penalty=${BTL3_REPEAT_PENALTY:-1.10}
+repeat_last_n=${BTL3_REPEAT_LAST_N:-512}
+case "${BTL3_ENABLE_THINKING:-false}" in
+    1|true|TRUE) chat_template_kwargs='{"enable_thinking":true}' ;;
+    *) chat_template_kwargs='{"enable_thinking":false}' ;;
+esac
 export LD_LIBRARY_PATH="$bundle_root/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
 export GGML_BACKEND_PATH="$bundle_root/lib/libggml-cuda.so"
 case "$(uname -m)" in
@@ -86,13 +93,17 @@ set -- \
     --model "$model" --alias "$aliases" --host "$host" --port "$port" \
     --ctx-size "$ctx" --parallel "$parallel" --n-gpu-layers "$gpu_layers" \
     --jinja --reasoning auto --reasoning-format deepseek --cont-batching \
-    --cache-ram 0 --no-warmup --no-ui "$@"
+    --chat-template-kwargs "$chat_template_kwargs" \
+    --n-predict "$max_tokens" --repeat-penalty "$repeat_penalty" \
+    --repeat-last-n "$repeat_last_n" --cache-ram 0 --no-warmup --no-ui "$@"
 if [ -n "${BTL3_API_KEY:-}" ]; then
     set -- "$@" --api-key "$BTL3_API_KEY"
 fi
 if [ "${BTL3_PRINT_COMMAND:-0}" = "1" ]; then
-    printf 'executable=%s\nmodel=%s\nhost=%s\nport=%s\nctx_size=%s\ngpu_memory_mib=%s\n' \
-        "$server" "$model" "$host" "$port" "$ctx" "$memory_mib"
+    printf 'executable=%s\nmodel=%s\nhost=%s\nport=%s\nctx_size=%s\ngpu_memory_mib=%s\ngpu_layers=%s\nmax_tokens=%s\nrepeat_penalty=%s\nrepeat_last_n=%s\nthinking_enabled=%s\n' \
+        "$server" "$model" "$host" "$port" "$ctx" "$memory_mib" \
+        "$gpu_layers" "$max_tokens" "$repeat_penalty" "$repeat_last_n" \
+        "$( [ "$chat_template_kwargs" = '{"enable_thinking":true}' ] && printf true || printf false )"
     exit 0
 fi
 exec "$server" "$@"

@@ -66,6 +66,11 @@ def validate_package(root: Path) -> dict:
     validate_tool_flow(source)
     require(source, "ctl.fragmentGenerated", "streaming fragments")
     require(source, "stream: true", "upstream streaming")
+    require(source, "max_tokens:", "bounded generation")
+    require(source, "enable_thinking: thinkingMode", "explicit thinking mode")
+    require(source, "repeat_penalty:", "repeat penalty")
+    require(source, "repetitionGuard.push", "streaming repetition guard")
+    require(source, "upstreamController?.abort()", "explicit upstream stream abort")
     default_url = "http://127.0.0.1:8080/v1"
     require(config, default_url, "local BTL-3 endpoint default")
     require(config, "\"autoStart\"", "automatic native-runner option")
@@ -73,6 +78,11 @@ def validate_package(root: Path) -> dict:
     require(runner, "spawn(runner, runnerArguments", "native subprocess launch")
     require(runner, "\"--model\", modelPath", "explicit model argument")
     require(runner, "\"--offline\"", "offline runner mode")
+    require(runner, "\"--n-gpu-layers\", gpuLayers", "full GPU offload")
+    require(runner, "\"--ctx-size\", contextSize", "safe explicit context")
+    require(runner, "detectGpuMemoryMiB", "GPU-aware context selection")
+    require(runner, "\"--n-predict\", maxTokens", "bounded runner default")
+    require(runner, "\"--repeat-penalty\", repeatPenalty", "runner repeat penalty")
     if "shell: true" in runner:
         raise ValidationError("native runner must not use shell execution")
     model_yaml = (root / "model.yaml").read_text()
@@ -89,6 +99,12 @@ def validate_package(root: Path) -> dict:
         "api_errors_propagated": True,
         "reasoning": True,
         "auto_start": True,
+        "full_gpu_offload": True,
+        "safe_context": True,
+        "bounded_generation": True,
+        "thinking_disabled_by_default": True,
+        "repetition_guard": True,
+        "explicit_stream_abort": True,
         "default_base_url": default_url,
     }
 

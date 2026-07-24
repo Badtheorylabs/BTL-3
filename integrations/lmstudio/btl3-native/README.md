@@ -21,9 +21,17 @@ tool-call fragments are buffered by call index and emitted sequentially after
 the upstream stream finishes. This preserves the calls without misattributing
 interleaved JSON fragments.
 
+Thinking is disabled by default and a 2,048-token response cap is enforced.
+The experimental thinking toggle is retained for diagnosis, but it is not
+recommended in this release because it can repeat or fail to terminate.
+The auto-start path explicitly requests full GPU offload and selects a safe
+context from detected NVIDIA memory (4K on macOS, 32K on a detected 24 GB GPU).
+Set `BTL3_CTX_SIZE` or `BTL3_GPU_LAYERS` before starting LM Studio to override
+those launch values.
+
 `model.yaml` is catalog metadata for the native-generator product. Its custom
 `btl3-avq2-native` compatibility type deliberately avoids claiming that LM
 Studio's stock GGUF engine can execute this model.
 
-This plugin has not been published. `lms push` is intentionally outside this
-repository's local validation workflow.
+This plugin has not been published and remains a development preview. `lms
+push` is intentionally outside this repository's local validation workflow.

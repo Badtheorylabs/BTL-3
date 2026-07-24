@@ -6,7 +6,7 @@ This document separates three products that must not be conflated:
 |---|---|---|
 | Stock Ollama | Stock runner | Does not execute AVQ2 |
 | **BTL-3 Patched Ollama** | Ollama directly spawns BTL's native `llama-server` | Packaging scaffold complete; target packages pending |
-| LM Studio | Official generator plugin calls BTL's native local endpoint | Plugin type-checks; macOS native endpoint verified |
+| LM Studio | Official generator plugin calls BTL's native local endpoint | Development preview; plugin unpublished and Windows validation pending |
 
 No HTTP translation bridge sits between patched Ollama and the runner.
 
@@ -191,6 +191,10 @@ candidate—not an Ollama-compatible release.
 
 ## LM Studio generator
 
+This generator has not been published to the LM Studio catalog. The current
+`lms dev` path is for development and must not be described as one-click
+consumer support. Stock LM Studio does not load the AVQ2 file directly.
+
 LM Studio's official plugin API treats generators as replacement token
 sources. The BTL plugin therefore calls the native runner's OpenAI-compatible
 endpoint; it does not ask LM Studio's stock engine to interpret AVQ2. Official
@@ -221,6 +225,12 @@ The plugin preserves:
 - full chat history and tool results;
 - parallel tool-call IDs, names, and JSON argument fragments;
 - explicit propagation of cancellation, connection, and API failures.
+
+The generator now mirrors the native launcher's full-offload and safe-context
+defaults, disables thinking for ordinary chat unless the user enables it,
+bounds each response, aborts the upstream stream on cancellation, and stops
+repeated-output collapse. These controls require target-machine validation
+before the Windows preview label can be removed.
 
 Content and reasoning stream live. LM Studio's generator event lifecycle
 represents one active tool call at a time and its argument-fragment callback

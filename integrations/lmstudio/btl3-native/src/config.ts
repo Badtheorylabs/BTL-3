@@ -31,6 +31,25 @@ export const globalConfigSchematics = createConfigSchematics()
     true,
   )
   .field(
+    "thinkingMode",
+    "boolean",
+    {
+      displayName: "Experimental thinking mode",
+      subtitle: "Not recommended in this release: it can repeat or fail to terminate. Keep this off.",
+    },
+    false,
+  )
+  .field(
+    "maxTokens",
+    "string",
+    {
+      displayName: "Maximum generated tokens",
+      subtitle: "Hard per-response limit. Prevents runaway background generation.",
+      placeholder: "2048",
+    },
+    "2048",
+  )
+  .field(
     "runnerPath",
     "string",
     {

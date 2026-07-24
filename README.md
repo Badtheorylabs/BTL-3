@@ -42,7 +42,7 @@ loading or reconstructing the BF16 base model.
 
 ## Why BTL-3
 
-- Agentic coding with thinking-mode generation.
+- Agentic coding and structured execution in the supported non-thinking mode.
 - Structured single, multiple, and parallel tool calls.
 - Explicit abstention behavior: the model is trained to avoid acting when a
   tool call is unnecessary.
@@ -164,7 +164,7 @@ prompt = tokenizer.apply_chat_template(
     messages,
     tokenize=False,
     add_generation_prompt=True,
-    enable_thinking=True,
+    enable_thinking=False,
 )
 inputs = tokenizer(prompt, return_tensors="pt").to(model.device)
 output = model.generate(**inputs, max_new_tokens=4096)
@@ -203,13 +203,16 @@ hf download badtheorylabs/BTL-3-Compact \
 cd BTL-3-Compact
 ```
 
-Install the verified macOS arm64 runtime and model:
+Install the verified host runtime and model from the downloaded release:
 
 ```bash
-python3 tools/install_consumer_bundle.py \
-  --runtime runtimes/supported/BTL-3-Compact-macos-arm64 \
-  --model model/BTL-3-Compact-AVQ2.gguf
+python3 tools/install_consumer_bundle.py --package .
 ```
+
+The installer discovers the matching supported runtime, verifies every runtime
+file and the complete model hash, and installs atomically. If the package only
+contains a preview runtime for the host, installation stops instead of silently
+claiming support. `--allow-preview` is an explicit opt-in for testing only.
 
 Or start the packaged server directly:
 
@@ -232,9 +235,15 @@ curl http://127.0.0.1:8080/v1/chat/completions \
         "content": "Write a retrying fetch helper and include tests."
       }
     ],
+    "chat_template_kwargs": {"enable_thinking": false},
     "stream": true
   }'
 ```
+
+> **Compact thinking-mode status:** thinking is disabled by default and is not
+> recommended in this release. Its experimental opt-in can repeat procedural
+> reasoning or fail to terminate. Use the supported non-thinking path for
+> chat, coding, and tool use while the reasoning-policy repair is prepared.
 
 ## Compact representation
 
@@ -280,12 +289,17 @@ not for the public quantization, LDLQ, Hadamard, or LoRA primitives it uses.
 | NVIDIA CUDA kernels | **Verified on RTX PRO 6000** | Exact GGUF, full CUDA offload |
 | Linux arm64 / DGX Spark package | Preview | Cross-compiled; target-device conformance pending |
 | OpenAI-compatible server | **Verified** | Streaming, reasoning, tools, and cancellation |
-| LM Studio | **Supported through generator** | Starts or connects to the native runner |
+| LM Studio | **Development preview** | Unpublished generator; Windows end-to-end validation pending |
 | Ollama CLI | **Supported through bridge** | Preserves the familiar client surface |
 | Stock Ollama model engine | Not direct | Stock `ollama create` does not decode AVQ2 |
 | Stock LM Studio GGUF engine | Not direct | Use the included native generator |
 
 Preview packages are never labeled as verified runtime bundles.
+
+The LM Studio generator is not a stock GGUF import and is not yet a published
+consumer plugin. Treat it as a development preview until the downloadable
+Windows package passes installation, cancellation, and generation tests on
+target NVIDIA hardware.
 
 ## Measured native performance
 
@@ -391,7 +405,8 @@ The Compact release includes:
 - multi-turn tasks with execution feedback and recovery;
 - private, offline, or self-hosted inference.
 
-Thinking mode is recommended for difficult coding and reasoning prompts.
+Use non-thinking mode for production. Compact's experimental thinking override
+is currently discouraged because it may repeat or fail to terminate.
 
 ## Operational guidance
 

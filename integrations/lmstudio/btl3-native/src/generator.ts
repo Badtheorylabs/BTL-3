@@ -7,6 +7,7 @@ import {
 import OpenAI from "openai";
 import type {
   ChatCompletionChunk,
+  ChatCompletionCreateParamsStreaming,
   ChatCompletionMessageParam,
   ChatCompletionMessageToolCall,
   ChatCompletionTool,
@@ -20,6 +21,35 @@ type ToolState = {
   name: string;
   argumentFragments: string[];
 };
+
+class RepetitionGuard {
+  private text = "";
+
+  push(fragment: string): void {
+    this.text = (this.text + fragment).slice(-16_000);
+    const words = this.text.toLowerCase().match(/[\p{L}\p{N}_'-]+/gu) ?? [];
+    for (let width = 6; width <= 32; width += 1) {
+      if (words.length < width * 4) continue;
+      const end = words.length;
+      const block = words.slice(end - width, end).join(" ");
+      const repeated = [2, 3, 4].every(offset =>
+        words.slice(end - width * offset, end - width * (offset - 1)).join(" ") === block
+      );
+      if (repeated) {
+        throw new Error(
+          "BTL-3 stopped a repeated-output loop. Retry with thinking disabled or a shorter context.",
+        );
+      }
+    }
+  }
+}
+
+function boundedInteger(raw: string, fallback: number): number {
+  const value = Number(raw);
+  return Number.isInteger(value) && value >= 64 && value <= 16_384
+    ? value
+    : fallback;
+}
 
 function messages(history: Chat): ChatCompletionMessageParam[] {
   const result: ChatCompletionMessageParam[] = [];
@@ -139,18 +169,36 @@ async function generate(
   });
   const toolDefinitions = tools(ctl);
   const pending = new Map<number, ToolState>();
+  const thinkingMode = config.get("thinkingMode");
+  const maxTokens = boundedInteger(config.get("maxTokens"), 2_048);
+  const repetitionGuard = new RepetitionGuard();
+  let upstreamController: AbortController | undefined;
+  const abortUpstream = (): void => upstreamController?.abort();
+  ctl.abortSignal.addEventListener("abort", abortUpstream, { once: true });
   try {
     ctl.abortSignal.throwIfAborted();
+    const request: ChatCompletionCreateParamsStreaming & {
+      repeat_penalty: number;
+      repeat_last_n: number;
+      chat_template_kwargs: { enable_thinking: boolean };
+    } = {
+      model: "BTL-3",
+      messages: messages(history),
+      tools: toolDefinitions,
+      ...(toolDefinitions ? { parallel_tool_calls: true } : {}),
+      stream: true,
+      max_tokens: maxTokens,
+      temperature: 0.2,
+      top_p: 0.9,
+      repeat_penalty: 1.1,
+      repeat_last_n: 512,
+      chat_template_kwargs: { enable_thinking: thinkingMode },
+    };
     const stream = await client.chat.completions.create(
-      {
-        model: "BTL-3",
-        messages: messages(history),
-        tools: toolDefinitions,
-        ...(toolDefinitions ? { parallel_tool_calls: true } : {}),
-        stream: true,
-      },
+      request,
       { signal: ctl.abortSignal },
     );
+    upstreamController = stream.controller;
     for await (const chunk of stream) {
       ctl.abortSignal.throwIfAborted();
       const delta = chunk.choices[0]?.delta;
@@ -159,9 +207,11 @@ async function generate(
         delta as typeof delta & { reasoning_content?: string }
       ).reasoning_content;
       if (reasoning) {
+        repetitionGuard.push(reasoning);
         ctl.fragmentGenerated(reasoning, { reasoningType: "reasoning" });
       }
       if (delta.content) {
+        repetitionGuard.push(delta.content);
         ctl.fragmentGenerated(delta.content);
       }
       for (const call of delta.tool_calls ?? []) {
@@ -172,7 +222,10 @@ async function generate(
       finishTool(ctl, state);
     }
   } catch (error) {
+    upstreamController?.abort();
     throw asError(error);
+  } finally {
+    ctl.abortSignal.removeEventListener("abort", abortUpstream);
   }
 }
 

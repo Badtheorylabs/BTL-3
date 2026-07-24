@@ -64,10 +64,29 @@ Useful configuration:
 | `BTL3_GPU_LAYERS` | `99` | Layers requested on Metal |
 | `BTL3_API_KEY` | unset | Optional local bearer key |
 | `BTL3_MODEL_ALIASES` | `BTL-3` | Comma-separated transport aliases |
+| `BTL3_MAX_TOKENS` | `2048` | Default per-response generation cap |
+| `BTL3_REPEAT_PENALTY` | `1.10` | Default repetition penalty |
+| `BTL3_REPEAT_LAST_N` | `512` | Token window used by repetition penalty |
+| `BTL3_ENABLE_THINKING` | `false` | Experimental opt-in; not recommended because thinking may repeat or fail to terminate |
 
 On a 16 GB Mac, begin at 2K–4K context. A larger context raises KV-cache and
 working-memory requirements. The model's declared context length is not a
 promise that a particular device can allocate it.
+
+### Thinking-mode status
+
+Compact is released with thinking disabled by default. The non-thinking path
+is the supported path for chat, coding, and tools in this revision. Thinking
+remains available only as an experimental override:
+
+```bash
+BTL3_ENABLE_THINKING=true \
+  artifacts/runtime/BTL-3-Compact-macos-arm64/bin/btl3-server
+```
+
+It is currently discouraged because it can enter repetitive procedural
+reasoning or fail to reach a final answer. A later reasoning-policy repair will
+receive a new artifact identity and validation report.
 
 ## LM Studio
 

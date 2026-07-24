@@ -22,6 +22,12 @@ class LMStudioPackageTest(unittest.TestCase):
         self.assertTrue(report["tool_call_fragments_buffered"])
         self.assertTrue(report["api_errors_propagated"])
         self.assertTrue(report["auto_start"])
+        self.assertTrue(report["full_gpu_offload"])
+        self.assertTrue(report["safe_context"])
+        self.assertTrue(report["bounded_generation"])
+        self.assertTrue(report["thinking_disabled_by_default"])
+        self.assertTrue(report["repetition_guard"])
+        self.assertTrue(report["explicit_stream_abort"])
         self.assertEqual(report["default_base_url"], "http://127.0.0.1:8080/v1")
 
     def test_manifest_is_explicitly_local_generator(self) -> None:
@@ -36,6 +42,21 @@ class LMStudioPackageTest(unittest.TestCase):
         self.assertIn("compatibilityTypes:", text)
         self.assertIn("- btl3-avq2-native", text)
         self.assertNotIn("- gguf", text)
+
+    def test_unpublished_plugin_is_not_described_as_windows_verified(self) -> None:
+        readme = (ROOT / "README.md").read_text()
+        integration = (ROOT / "docs/patched-ollama-and-lmstudio.md").read_text()
+        self.assertIn("Development preview", readme)
+        self.assertIn("has not been published", integration)
+        self.assertNotIn("| LM Studio | **Supported through generator**", readme)
+
+    def test_thinking_is_default_off_and_explicitly_discouraged(self) -> None:
+        config = (PLUGIN / "src/config.ts").read_text()
+        integration = " ".join((PLUGIN / "README.md").read_text().split())
+        self.assertIn("Experimental thinking mode", config)
+        self.assertIn("Keep this off", config)
+        self.assertIn("not recommended", integration)
+        self.assertIn("fail to terminate", integration)
 
 
 if __name__ == "__main__":

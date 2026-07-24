@@ -47,13 +47,23 @@ $Port = if ($env:BTL3_PORT) { $env:BTL3_PORT } else { "8080" }
 $Parallel = if ($env:BTL3_PARALLEL) { $env:BTL3_PARALLEL } else { "1" }
 $Alias = if ($env:BTL3_MODEL_ALIASES) { $env:BTL3_MODEL_ALIASES } else { "BTL-3" }
 $GpuLayers = if ($env:BTL3_GPU_LAYERS) { $env:BTL3_GPU_LAYERS } else { "99" }
+$MaxTokens = if ($env:BTL3_MAX_TOKENS) { $env:BTL3_MAX_TOKENS } else { "2048" }
+$RepeatPenalty = if ($env:BTL3_REPEAT_PENALTY) { $env:BTL3_REPEAT_PENALTY } else { "1.10" }
+$RepeatLastN = if ($env:BTL3_REPEAT_LAST_N) { $env:BTL3_REPEAT_LAST_N } else { "512" }
+$ChatTemplateKwargs = if ($env:BTL3_ENABLE_THINKING -in @("1", "true", "TRUE")) {
+    '{"enable_thinking":true}'
+} else {
+    '{"enable_thinking":false}'
+}
 $env:PATH = "$(Join-Path $BundleRoot 'lib');$env:PATH"
 $env:GGML_BACKEND_PATH = Join-Path $BundleRoot "lib\ggml-cuda.dll"
 $Arguments = @(
     "--model", $Model, "--alias", $Alias, "--host", $HostName, "--port", $Port,
     "--ctx-size", $Context, "--parallel", $Parallel, "--n-gpu-layers", $GpuLayers,
     "--jinja", "--reasoning", "auto", "--reasoning-format", "deepseek",
-    "--cont-batching", "--cache-ram", "0", "--no-warmup", "--no-ui"
+    "--chat-template-kwargs", $ChatTemplateKwargs,
+    "--cont-batching", "--n-predict", $MaxTokens, "--repeat-penalty", $RepeatPenalty,
+    "--repeat-last-n", $RepeatLastN, "--cache-ram", "0", "--no-warmup", "--no-ui"
 )
 if ($env:BTL3_API_KEY) { $Arguments += @("--api-key", $env:BTL3_API_KEY) }
 $Arguments += $args
@@ -64,6 +74,11 @@ if ($env:BTL3_PRINT_COMMAND -eq "1") {
     "port=$Port"
     "ctx_size=$Context"
     "gpu_memory_mib=$MemoryMiB"
+    "gpu_layers=$GpuLayers"
+    "max_tokens=$MaxTokens"
+    "repeat_penalty=$RepeatPenalty"
+    "repeat_last_n=$RepeatLastN"
+    "thinking_enabled=$($ChatTemplateKwargs -eq '{"enable_thinking":true}')"
     exit 0
 }
 & $Server @Arguments
